@@ -9,8 +9,7 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const distance = R * c; // Distance in kilometers
-  return distance;
+  return R * c; // Distance in kilometers
 }
 
 const getEarthquakesInRadius = async (req, res) => {
@@ -22,25 +21,20 @@ const getEarthquakesInRadius = async (req, res) => {
 
   try {
     const response = await axios.get(
-      "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=15&minmagnitude=2"
+      `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=15&minmagnitude=2&maxradiuskm=${radius}&latitude=${userLat}&longitude=${userLon}`
     );
-    
+
     // Log the API response to check if it returns data
     console.log(response.data);
 
     // Filter earthquakes within the specified radius
-    const earthquakesInRadius = response.data.features.filter((quake) => {
-      const quakeLat = quake.geometry.coordinates[1];
-      const quakeLon = quake.geometry.coordinates[0];
-      const distance = calculateDistance(userLat, userLon, quakeLat, quakeLon);
-      
-      return distance <= radius; // Only include earthquakes within the given radius
-    }).map((quake) => ({
+    const earthquakesInRadius = response.data.features.map((quake) => ({
       magnitude: quake.properties.mag,
       location: quake.properties.place, // Location of the earthquake
       latitude: quake.geometry.coordinates[1],
       longitude: quake.geometry.coordinates[0],
       distance: calculateDistance(userLat, userLon, quake.geometry.coordinates[1], quake.geometry.coordinates[0]).toFixed(2),
+      time: new Date(quake.properties.time).toLocaleString(), // Convert timestamp to human-readable date & time
     }));
 
     // If no earthquakes are found within the radius, return a message
@@ -53,6 +47,7 @@ const getEarthquakesInRadius = async (req, res) => {
     console.log(earthquakesInRadius); // Log filtered earthquakes to ensure filtering works
     res.json(earthquakesInRadius);
   } catch (error) {
+    console.log(error);
     res.status(500).json({ error: "Failed to fetch earthquake data" });
   }
 };
