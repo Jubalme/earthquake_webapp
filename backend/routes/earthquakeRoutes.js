@@ -1,8 +1,10 @@
 const express = require("express");
-const { getEarthquakes } = require("../controllers/earthquakeControllers");
-
+const { getEarthquakesInRadius } = require("../controllers/getearthquakeInRadius");
 const router = express.Router();
 
-router.get("/", getEarthquakes);
+
+
+
+router.get("/earthquakes-in-radius", getEarthquakesInRadius);
 
 module.exports = router;
